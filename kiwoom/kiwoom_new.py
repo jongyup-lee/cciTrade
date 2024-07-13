@@ -5,9 +5,10 @@ from PyQt5.QtCore import *
 from config.errorCode import *
 from PyQt5.QtTest import *
 from config.kiwoomType import *
-from kiwoomTrade_chejanSlot import ChejanSlot
-from kiwoomTrade_realDataSlot import RealDataSlot
+from kiwoom.kiwoom_chejanSlot import ChejanSlot
+from kiwoom.kiwoom_realDataSlot import RealDataSlot
 from kiwoom.kiwoom_GetMyInfo import GetMyInfo
+from kiwoom.kiwoom_SetLogging import Logging
 
 class Kiwoom(QAxWidget):
 
@@ -17,19 +18,21 @@ class Kiwoom(QAxWidget):
         self.realType = RealType()
         self.chs = ChejanSlot()
         self.rds = RealDataSlot()
-        self.gmi = GetMyInfo()
+        self.gmi = GetMyInfo(self)
+        self.slg = Logging()
 
         ################## 변수 모음 ##################
+        self.screen_my_info = "2000"
         self.login_event_loop = None # 이벤트 루프 : 로그인
-        self.gmi.detail_account_info_event_loop = QEventLoop() # 이벤트 루프 : 예수금 상세 정보 요청
+        
+        self.detail_account_info_event_loop = QEventLoop() # 이벤트 루프 : 예수금 상세 정보 요청
+
         self.calculator_event_loop = QEventLoop()
 
         self.account_num = None # 보유 계좌번호
         self.use_money = 0
         self.use_money_persent = 0.5
-
-        # 스크린 번호
-        self.screen_my_info = "2000"
+        
         self.screen_calculation_stock = "4000"
         self.screen_real_stock = "5000" # 종목별 할당할 스크린 번호
         self.screen_meme_stock = "6000" # 종목별 할당할 주문용 스크린 번호
@@ -44,7 +47,8 @@ class Kiwoom(QAxWidget):
 
 
         ################## 함수 실행 ##################
-        self.get_ocx_instance()
+        #self.get_ocx_instance()
+        self.kiwoomOCX = QAxWidget("KHOPENAPI.KHOpenAPICtrl.1")
         self.event_slots()
         self.real_event_slots()
 
@@ -67,6 +71,7 @@ class Kiwoom(QAxWidget):
 
         # 실시간 등록 - SetRealReg 요청에 대한 응답은 OnReceiveRealData
         print("real_event_slots() - 장시작/종료 실시간 요청")
+        self.slg.setLogging('info', '장시작/종료 실시간 요청')
         self.dynamicCall("SetRealReg(QString, QString, QString, QString", self.screen_start_stop_real, "", self.realType.REALTYPE['장시작시간']['장운영구분'],"0")
 
         # 종목 코드 등록
@@ -78,29 +83,30 @@ class Kiwoom(QAxWidget):
             print("실시간 등록 코드 : %s, 스크린번호 : %s, fid 번호 : %s" % (code, screen_num, fids))
 
         ################## 장 시작/종료 및 실시간 정보 수집 시그널 끝 ##################
-
+    '''
     def get_ocx_instance(self):
         self.setControl("KHOPENAPI.KHOpenAPICtrl.1")
+    '''
 
     # 이벤트 집합소
     # 서버에 요청 후 리턴 받는 응답을 한 곳에서 받아 처리
     def event_slots(self):
         #로그인 이벤트 응답 / errorCode.py에 코드별 상태값 정리 참고
-        self.OnEventConnect.connect(self.login_slot) # 로그인 EventLoop
+        self.kiwoomOCX.OnEventConnect.connect(self.login_slot) # 로그인 EventLoop
         #TR 이벤트 응답
-        self.OnReceiveTrData.connect(self.trdata_slot)
+        self.kiwoomOCX.OnReceiveTrData.connect(self.trdata_slot)
         # msg 이벤트 응답
-        self.OnReceiveMsg.connect(self.msg_slot)
+        self.kiwoomOCX.OnReceiveMsg.connect(self.msg_slot)
 
     # 실시간 요청 컨드롤
     def real_event_slots(self):
         # 장시작/종료 실시간 응답 처리
-        self.OnReceiveRealData.connect(self.rds.realdata_slot)
+        self.kiwoomOCX.OnReceiveRealData.connect(self.rds.realdata_slot)
         # 주문에 대한 이벤트 등록
-        self.OnReceiveChejanData.connect(self.chs.chejan_slot)
+        self.kiwoomOCX.OnReceiveChejanData.connect(self.chs.chejan_slot)
 
     def signal_login_commConnect(self):
-        self.dynamicCall("CommConnect()") # 키움 로그인을 위한 메서드 이름과 사용 방법 : dynamicCall이라는 메서드를 이용하여 호출
+        self.kiwoomOCX.dynamicCall("CommConnect()") # 키움 로그인을 위한 메서드 이름과 사용 방법 : dynamicCall이라는 메서드를 이용하여 호출
 
         self.login_event_loop = QEventLoop() # 로그인 EventLoop 설정
         self.login_event_loop.exec_() # 로그인 EventLoop 시작
@@ -146,7 +152,7 @@ class Kiwoom(QAxWidget):
             self.use_money = self.use_money / 4
             ##############################################################
 
-            self.gmi.detail_account_info_event_loop.exit() # 예수금 상세 현황 요청 이벤트 루트 종료
+            self.detail_account_info_event_loop.exit() # 예수금 상세 현황 요청 이벤트 루트 종료
 
         elif sRQName == "계좌평가잔고내역요청":
             print("sRQName :: 계좌평가잔고내역요청")
@@ -206,7 +212,7 @@ class Kiwoom(QAxWidget):
             if sPrevNext == "2":
                 self.gmi.detail_account_mystock(sPrevNext="2")
             else:
-                self.gmi.detail_account_info_event_loop.exit()
+                self.detail_account_info_event_loop.exit()
 
 
             #self.detail_account_mystock_event_loop.eixt() # 계좌 평가 잔고 내역 요청 이벤트 루트 종료
@@ -254,7 +260,7 @@ class Kiwoom(QAxWidget):
 
                 print("[info] 미체결 종목 : %s " % self.not_account_stock_dick[order_no])
 
-            self.gmi.detail_account_info_event_loop.exit()
+            self.detail_account_info_event_loop.exit()
 
         elif sRQName == "주식일봉차트조회":
             print("sRQName :: 주식일봉차트조회")
