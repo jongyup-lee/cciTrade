@@ -9,7 +9,7 @@ class Logging():
 
         today = datetime.today().date()
 
-        logging.basicConfig(filename=f'../logs/systemTrading_{today}.log', level=logging.DEBUG,
+        logging.basicConfig(filename=f'logs/systemTrading_{today}.log', level=logging.DEBUG,
                             format="[ %(asctime)s | %(levelname)s ] %(message)s",
                             datefmt="%Y-%m-%d %H:%M:%S")
         self.logger = logging.getLogger()

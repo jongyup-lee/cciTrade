@@ -2,14 +2,15 @@ import sys
 from PyQt5.QtTest import *
 
 class RealDataSlot():
-    def __init__(self) -> None:
-        pass
+    def __init__(self, kiwoomMain) -> None:
+        print('[RealDataSlot] __init__')
+        self.kiwoomMain = kiwoomMain
 
     def realdata_slot(self, sCode, sRealType, sRealData):
-        print("realdata_slot() => 장시작/종료, 실시간 데이터 요청에 대한 응답 - %s " % sRealType)
+        print("[RealDataSlot] realdata_slot() => 장시작/종료, 실시간 데이터 요청에 대한 응답 - %s " % sRealType)
         if sRealType == "장시작시간":
             fid = self.realType.REALTYPE[sRealType]['장운영구분']
-            value = self.dynamicCall("GetCommRealData(QString, int)", sCode, fid)
+            value = self.kiwoomMain.dynamicCall("GetCommRealData(QString, int)", sCode, fid)
             print("sRealType :: 장시작시간 - value : %s " % value)
 
             if value == '0':
@@ -22,7 +23,7 @@ class RealDataSlot():
                 print("[info] 15시 30분 장종료")
 
                 for code in self.portfolio_stock_dict.key():
-                    self.dynamicCall("SetRealRemove(QString, QString)", self.portfolio_stock_dict[code]['스크린번호'], code)
+                    self.kiwoomMain.dynamicCall("SetRealRemove(QString, QString)", self.portfolio_stock_dict[code]['스크린번호'], code)
 
                 QTest.qWait(5000)
 
@@ -36,26 +37,26 @@ class RealDataSlot():
 
             print("sRealType :: 주식체결")
             # 체결시간 => HHMMSS
-            a = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['체결시간'])
-            b = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['현재가'])
+            a = self.kiwoomMain.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['체결시간'])
+            b = self.kiwoomMain.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['현재가'])
             b = abs(int(b))  # abs : 절대값
-            c = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['전일대비'])
+            c = self.kiwoomMain.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['전일대비'])
             c = abs(int(c))  # abs : 절대값
-            d = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['등락율'])
+            d = self.kiwoomMain.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['등락율'])
             d = float(d)
-            e = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['(최우선)매도호가'])
+            e = self.kiwoomMain.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['(최우선)매도호가'])
             e = abs(int(e))
-            f = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['(최우선)매수호가'])
+            f = self.kiwoomMain.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['(최우선)매수호가'])
             f = abs(int(f))
-            g = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['거래량'])
+            g = self.kiwoomMain.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['거래량'])
             g = abs(int(g))
-            h = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['누적거래량'])
+            h = self.kiwoomMain.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['누적거래량'])
             h = abs(int(h))
-            i = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['고가'])
+            i = self.kiwoomMain.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['고가'])
             i = abs(int(i))
-            j = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['시가'])
+            j = self.kiwoomMain.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['시가'])
             j = abs(int(j))
-            k = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['저가'])
+            k = self.kiwoomMain.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['저가'])
             k = abs(int(k))
 
             if sCode not in self.portfolio_stock_dict:  # 체결된 종목이 나의 관심 종목에 저장되어 있지 않다면
@@ -86,7 +87,7 @@ class RealDataSlot():
                 meme_rate = (b - asd['매입가']) / asd['매입가'] * 100
 
                 if asd['매매가능수량'] > 0 and (meme_rate > 5 or meme_rate < -5):
-                    order_success = self.dynamicCall(
+                    order_success = self.kiwoomMain.dynamicCall(
                         "SendOrder(QString, QString, QString, int, QString, int, int, QString, QString",
                         ["신규매도", self.portfolio_stock_dict[sCode]['주문용스크린번호'], self.account_num, 2,
                          sCode, asd['매매가능수량'], 0, self.realType.SENDTYPE['거래구분']['시장가'], ""])
@@ -103,7 +104,7 @@ class RealDataSlot():
                 meme_rate = (b - jd['매입단가']) / jd['매입단가'] * 100
 
                 if jd['주문가능수량'] > 0 and (meme_rate > 5 or meme_rate < -5):
-                    order_success = self.dynamicCall(
+                    order_success = self.kiwoomMain.dynamicCall(
                         "SendOrder(QString, QString, QString, int, QString, int, int, QString, QString",
                         ['신규매도', self.portfolio_stock_dict[sCode]['주문용스크린번호'], self.account_num, 2, sCode, jd['주문가능수량'],
                          0, self.realType.SENDTYPE['거래구분']['시장가'], ""])
@@ -118,7 +119,7 @@ class RealDataSlot():
                 result = (self.use_money * 0.1) / e
                 quantity = int(result)
 
-                order_success = self.dynamicCall(
+                order_success = self.kiwoomMain.dynamicCall(
                     "SendOrder(QString, QString, QString, int, QString, int, int, QString, QString",
                     ["신규매수", self.portfolio_stock_dict[sCode]['주문용스크린번호'], self.account_num, 1, sCode, quantity,
                      e, self.realType.SENDTYPE['거래구분']['지정가'], ""])
@@ -140,7 +141,7 @@ class RealDataSlot():
                 # 매수 취소
                 if order_gubun == "신규매수" and not_quantity > 0 and e > meme_price:
                     print("%s %s", ("매수취소한다.", sCode))
-                    order_success = self.dynamicCall(
+                    order_success = self.kiwoomMain.dynamicCall(
                         "SendOrder(QString, QString, QString, int, QString, int, int, QString, QString",
                         ["매수취소", self.portfolio_stock_dict[sCode]['주문용스크린번호'], self.account_num, 3, code, 0, 0,
                          self.realType.SENDTYPE['거래구분']['지정가'], order_num])

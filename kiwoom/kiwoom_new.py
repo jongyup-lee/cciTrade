@@ -2,14 +2,16 @@ import sys
 import os
 from PyQt5.QAxContainer import *
 from PyQt5.QtCore import *
-from config.errorCode import *
 from PyQt5.QtTest import *
+from config.errorCode import *
 from config.kiwoomType import *
-from kiwoom.kiwoom_chejanSlot import ChejanSlot
-from kiwoom.kiwoom_realDataSlot import RealDataSlot
+from kiwoom.kiwoom_ChejanSlot import ChejanSlot
+from kiwoom.kiwoom_RealDataSlot import RealDataSlot
 from kiwoom.kiwoom_GetMyInfo import GetMyInfo
 from kiwoom.kiwoom_SetLogging import Logging
 from kiwoom.kiwoom_TRDataSlot import TrDataSlot
+from kiwoom.kiwoom_Login import Login
+from kiwoom.kiwoom_CondStockList import GetConditionStockList
 
 class Kiwoom(QAxWidget):
 
@@ -17,11 +19,13 @@ class Kiwoom(QAxWidget):
         super().__init__()
 
         self.realType = RealType()
-        self.chs = ChejanSlot()     # ChejanSlot
-        self.rds = RealDataSlot()   # RealDataSlot
+        self.lgn = Login(self)
         self.gmi = GetMyInfo(self)  # myInfo
-        self.slg = Logging()        # Logging 
         self.tds = TrDataSlot(self) # TrDataSlot
+        self.rds = RealDataSlot(self)   # RealDataSlot
+        self.chs = ChejanSlot()     # ChejanSlot
+        self.slg = Logging()        # Logging 
+        self.csl = GetConditionStockList(self)
 
         ################## 변수 모음 ##################
         self.screen_my_info = "2000"
@@ -49,18 +53,24 @@ class Kiwoom(QAxWidget):
 
 
         ################## 함수 실행 ##################
-        #self.get_ocx_instance()
-        self.kiwoomOCX = QAxWidget("KHOPENAPI.KHOpenAPICtrl.1")
+        self.get_ocx_instance()
         self.event_slots()
         self.real_event_slots()
 
-        self.signal_login_commConnect() # 로그인
+        self.lgn.signal_login_commConnect() # 로그인
         self.gmi.get_account_info() # 보유 계좌 조회
         self.gmi.detail_account_info() # 계좌에 대한 상세 정보 조회
         self.gmi.detail_account_mystock() # 보유 주식 조회
         self.gmi.not_concluded_account() # 실시간 미체결 종목 조회
-
-        self.read_code() #  120일선 기준 필터링되어 저장된 txt파일에서 self.portfolio_stock_dict로 종목 이관하는 함수
+        self.csl.getConditionStocks()
+        
+        '''
+        ToDo : 2024/07/14
+        이번 순서에 하기 내용을 DB로 바꾸는 과정을 코딩해야 함
+        # self.read_code() #  120일선 기준 필터링되어 저장된 txt파일에서 self.portfolio_stock_dict로 종목 이관하는 함수
+        '''
+        #print("꾸러기조건식의 종목코드들 : %s" % self.conditionStockCodes)
+        
         self.screen_number_setting() # 종목별 스크린번호 관리
 
         # 데이터를 받아와 조건에 맞는 종목을 선정하여 txt 파일로 저장한다. => 관심종목 추가 => 필요에 따라 수행하는 역할
@@ -85,43 +95,35 @@ class Kiwoom(QAxWidget):
             print("실시간 등록 코드 : %s, 스크린번호 : %s, fid 번호 : %s" % (code, screen_num, fids))
 
         ################## 장 시작/종료 및 실시간 정보 수집 시그널 끝 ##################
-    '''
+    
     def get_ocx_instance(self):
-        self.setControl("KHOPENAPI.KHOpenAPICtrl.1")
-    '''
+        self.setControl("KHOPENAPI.KHOpenAPICtrl.1")    
 
     # 이벤트 집합소
     # 서버에 요청 후 리턴 받는 응답을 한 곳에서 받아 처리
     def event_slots(self):
         #로그인 이벤트 응답 / errorCode.py에 코드별 상태값 정리 참고
-        self.kiwoomOCX.OnEventConnect.connect(self.login_slot) # 로그인 EventLoop
+        self.OnEventConnect.connect(self.login_slot) # 로그인 EventLoop
+        #조건 검색식 조회 응답 이벤트
+        self.OnReceiveTrCondition.connect(self.csl.condition_slot)
+        #로컬 사용자 조건식 저장 성공 여부 응답 이벤트
+        self.OnReceiveConditionVer.connect(self.csl.conditionVer_slot)
         #TR 이벤트 응답
-        self.kiwoomOCX.OnReceiveTrData.connect(self.tds.trdata_slot)
+        self.OnReceiveTrData.connect(self.tds.trdata_slot)
         # msg 이벤트 응답
-        self.kiwoomOCX.OnReceiveMsg.connect(self.msg_slot)
+        self.OnReceiveMsg.connect(self.msg_slot)
 
     # 실시간 요청 컨드롤
     def real_event_slots(self):
         # 장시작/종료 실시간 응답 처리
-        self.kiwoomOCX.OnReceiveRealData.connect(self.rds.realdata_slot)
+        self.OnReceiveRealData.connect(self.rds.realdata_slot)
         # 주문에 대한 이벤트 등록
-        self.kiwoomOCX.OnReceiveChejanData.connect(self.chs.chejan_slot)
-
-    def signal_login_commConnect(self):
-        self.kiwoomOCX.dynamicCall("CommConnect()") # 키움 로그인을 위한 메서드 이름과 사용 방법 : dynamicCall이라는 메서드를 이용하여 호출
-
-        self.login_event_loop = QEventLoop() # 로그인 EventLoop 설정
-        self.login_event_loop.exec_() # 로그인 EventLoop 시작
+        self.OnReceiveChejanData.connect(self.chs.chejan_slot)
 
     def login_slot(self, errCode):
         print(errors(errCode))
 
         self.login_event_loop.exit() # 로그인 EventLoop 끝
-
-    ###################################################################################33
-    # trdata_slot()
-    # 있던자리
-    ######################################################################################
 
     # 종목코드 가져오는 함수
     def get_code_list_by_market(self, market_code):

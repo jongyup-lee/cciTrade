@@ -1,5 +1,6 @@
-class TrDataSlot:
+class TrDataSlot():
     def __init__(self, kiwoomMain) -> None:
+        print('[TrDataSlot] __init__')
         self.kiwoomMain = kiwoomMain
 
     ################################################################################################################
@@ -12,6 +13,7 @@ class TrDataSlot:
     ################################################################################################################
 
     def trdata_slot(self, sScrNo, sRQName, sTrCode, sRecordName, sPrevNext): #
+        print('[TrDataSlot] trdata_slot()')
         '''
         TR 요청에 대한 응답 처리
         sScrNo : 스크린번호
@@ -21,7 +23,7 @@ class TrDataSlot:
         sPrevNext : 다음 페이지가 있는지
         return :
         '''
-        print("trdata_slot() => TR요청에 대한 응답")
+        print("[TrDataSlot] trdata_slot() => TR요청에 대한 응답")
 
         if sRQName == "예수금상세현황요청":
             print("sRQName :: 예수금상세현황요청")

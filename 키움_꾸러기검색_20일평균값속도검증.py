@@ -16,6 +16,7 @@ class Main():
 
         # 전체조건식 리스트 획득
         conditions = kiwoom.GetConditionNameList()
+        print('conditions : %s' % conditions)
 
         #사용할 조건식 선별
         condition_index = conditions[0][0]
