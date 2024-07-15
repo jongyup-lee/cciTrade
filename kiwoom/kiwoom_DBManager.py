@@ -1,5 +1,6 @@
 import FinanceDataReader as fdr
 import mysql.connector
+from mysql.connector import Error
 from datetime import datetime, timedelta
 
 
@@ -7,9 +8,9 @@ from datetime import datetime, timedelta
 class CCIMonitor:
     def __init__(self, kiwoomMain):
         db_config = {
-            'host': '127.0.0.1',
-            'user': 'stockrich',
-            'password': 'stockrich',
+            'host': 'stocktrade.c14kwm840um7.us-east-1.rds.amazonaws.com',
+            'user': 'root',
+            'password': 'stocktraderootpwd',
             'database': 'stocktrade'
         }
 
