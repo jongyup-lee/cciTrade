@@ -13,7 +13,6 @@ class TrDataSlot():
     ################################################################################################################
 
     def trdata_slot(self, sScrNo, sRQName, sTrCode, sRecordName, sPrevNext): #
-        print('[TrDataSlot] trdata_slot()')
         '''
         TR 요청에 대한 응답 처리
         sScrNo : 스크린번호
@@ -23,15 +22,10 @@ class TrDataSlot():
         sPrevNext : 다음 페이지가 있는지
         return :
         '''
-        print("[TrDataSlot] trdata_slot() => TR요청에 대한 응답")
 
         if sRQName == "예수금상세현황요청":
-            print("sRQName :: 예수금상세현황요청")
             deposit = self.kiwoomMain.dynamicCall("GetCommData(String, String, int, String)", sTrCode, sRQName, 0, "예수금")
-            print("[info] 예수금 %s" % deposit)
-
             ok_deposit = self.kiwoomMain.dynamicCall("GetCommData(String, String, int, String)", sTrCode, sRQName, 0, "출금가능금액")
-            print("[info] 출금가능금액 %s" % ok_deposit)
 
             ##############################################################
             # 매수 가능 금액 조절 - 몰빵하는 것을 시스템 적으로 조정하는 기능 (차후 조정하면서 매매할 수 있음)
@@ -43,16 +37,12 @@ class TrDataSlot():
             self.kiwoomMain.detail_account_info_event_loop.exit() # 예수금 상세 현황 요청 이벤트 루트 종료
 
         elif sRQName == "계좌평가잔고내역요청":
-            print("sRQName :: 계좌평가잔고내역요청")
             # 총 매입 금액 / 총 수익률
             total_buy_money = self.kiwoomMain.dynamicCall("GetCommData(String, String, int, String)", sTrCode, sRQName, 0, "총매입금액")
             total_buy_money_result = int(total_buy_money)
 
-            print("[info] 총매입금액 : %s" % total_buy_money_result)
-
             total_progit_loss_rate = self.kiwoomMain.dynamicCall("GetCommData(String, String, int, String)", sTrCode, sRQName, 0, "총수익률(%)")
             total_progit_loss_rate_result = float(total_progit_loss_rate)
-            print("[info] 총수익률(%%) : %s" % total_progit_loss_rate_result)
 
             # 보유 종목 개수
             rows = self.kiwoomMain.dynamicCall("GetRepeatCnt(QString, QString)", sTrCode, sRQName)
@@ -91,11 +81,8 @@ class TrDataSlot():
                 self.kiwoomMain.account_stock_dict[code].update({"매매가능수량": possible_quantity})
 
                 cnt += 1
-            print("[info] 계좌에 가지고 있는 종목 : %s " % self.kiwoomMain.account_stock_dict)
             if sPrevNext == "":
                 sPrevNext = "0"
-            print("[info] 계좌 보유 종목에 대한 sPrevNext 값 : %s " % sPrevNext)
-            print("[info] 계좌 보유 종목 페이별 보유 종목 수 : %s " % cnt)
 
             if sPrevNext == "2":
                 self.kiwoomMain.gmi.detail_account_mystock(sPrevNext="2")
@@ -106,7 +93,6 @@ class TrDataSlot():
             #self.detail_account_mystock_event_loop.eixt() # 계좌 평가 잔고 내역 요청 이벤트 루트 종료
 
         elif sRQName == "실시간미체결종목요청":
-            print("sRQName :: 실시간미체결종목요청")
             rows = self.kiwoomMain.dynamicCall("GetRepeatCnt(QString, QString)", sTrCode, sRQName)
             for i in range(rows):
                 code = self.kiwoomMain.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i,"종목코드")
@@ -151,13 +137,11 @@ class TrDataSlot():
             self.kiwoomMain.detail_account_info_event_loop.exit()
 
         elif sRQName == "주식일봉차트조회":
-            print("sRQName :: 주식일봉차트조회")
             code = self.kiwoomMain.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, 0,"종목코드")
             code = code.strip()
 
             # 해당 종목의 거래일 수 조회
             cnt = self.kiwoomMain.dynamicCall("GetRepeatCnt(QString, QString)", sTrCode, sRQName)
-            print("[info] 종목의 데이터 일 수 %s: " % cnt)
 
             # 새로운 조건식을 구성하기 위한 요소들
             # 봉수 : cnt
@@ -190,7 +174,6 @@ class TrDataSlot():
                 # ['', '316', '376190', '119', '20190326', '310', '323', '310', '']
                 #     현재가 ,  거래량  ,거래대금,    일자   ,  시가,   고가,   저가
                 # 0일부터 총 조회 일수까지 루프
-            print("주식 일봉 차트 조회 후 생성한 종목 리스트 : %s" %  self.kiwoomMain.calcul_data)
             ########################################################################################################
             # 해당 종목의 모든 거래일 데이터를 받아와서 self.calcul_data에 저장 끝
             ########################################################################################################
@@ -229,7 +212,6 @@ class TrDataSlot():
                     # 그렇게 확인을 하다가 일봉이 120-일 이평선보다 위에 있으면 계산 진행
 
                     prev_price = None # 조회한 종목 해당일의 저가
-                    print("[info] bottom_price : %s " % bottom_price)
                     if bottom_price == True: # 조회 기준일 저가가 120일 평균 가격보다 낮거나 같고 120일 평균 가격이 당일 고가보다 낮거나 같음
                         print("======================================================================================================")
                         moving_average_price_prev = 0 # 조회한 종목의 조회일 기준 120일 평균 가격 (조회한 당일 이전의 날짜 기준 120일 평균 가격 - 2일전 기준 120평균, 3일전 기준 120 평균, 4일전 120 평균..... )
@@ -266,9 +248,7 @@ class TrDataSlot():
                 # 120일 기준 검색 조건에 부합하는 종목을 텍스트 파일로 저장함
                 # 이후 결과물 어떤 방식으로 출력하고 사용할지 고민해야 함
                 #--------------------------------------------------------------------------------------------------------
-                print("pass_success : %s" % pass_success)
                 if pass_success == True:
-                    print("조건부 통과됨")
                     code_nm = self.kiwoomMain.dynamicCall("GetMasterCodeName(QString)", code) # 종목코드 1개의 종목 한글명을 반환한다.
 
                     f = open("D:/works/AutoTradePJT/python/progrmaGarden/pythonProject/files/condition_stock.txt", "a", encoding="utf8")

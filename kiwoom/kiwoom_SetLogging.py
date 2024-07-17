@@ -2,7 +2,9 @@ import logging
 from datetime import datetime
 
 class Logging():
-    def __init__(self) -> None:
+    def __init__(self, kiwoomMain) -> None:
+        print('[Logging] __init__')
+        self.kiwoomMain = kiwoomMain
         pass
 
     def setLogging(self, kind, context):

@@ -21,11 +21,11 @@ class Kiwoom(QAxWidget):
         self.realType = RealType()
         self.lgn = Login(self)
         self.gmi = GetMyInfo(self)  # myInfo
+        self.csl = GetConditionStockList(self)
         self.tds = TrDataSlot(self) # TrDataSlot
         self.rds = RealDataSlot(self)   # RealDataSlot
-        self.chs = ChejanSlot()     # ChejanSlot
-        self.slg = Logging()        # Logging 
-        self.csl = GetConditionStockList(self)
+        self.chs = ChejanSlot(self)     # ChejanSlot
+        self.slg = Logging(self)        # Logging 
 
         ################## 변수 모음 ##################
         self.screen_my_info = "2000"

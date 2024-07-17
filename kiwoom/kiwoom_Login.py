@@ -4,6 +4,7 @@ from PyQt5.QtTest import *
 
 class Login():
     def __init__(self, kiwoomMain) -> None:
+        print('[Login] __init__')
         self.kiwoomMain = kiwoomMain
 
     def signal_login_commConnect(self):

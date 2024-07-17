@@ -14,17 +14,13 @@ class GetMyInfo():
     
     # 내 정보 가져오기
     def get_account_info(self):
-        print('[GetMyInfo] get_account_info')
         account_list = self.kiwoomMain.dynamicCall("GetLoginInfo(String)", "ACCNO")
-
         self.kiwoomMain.account_num = account_list.split(';')[1]
-        print('[info] 계좌번호 : %s' % self.kiwoomMain.account_num)
 
     # 예수금 정보 가져오기
     def detail_account_info(self):
         # SetInputValue 서버 전송전 필요 데이터 입력
         # CommRqData 데이터 요청 실행
-        print("detail_account_info() => 예수금 요청")    # 키움 예수금 정보 요청하기 위한 메서드 이름과 사용 방법 : dynamicCall이라는 메서드를 이용하여 호출
         self.kiwoomMain.dynamicCall("SetInputValue(String, String)", "계좌번호", self.kiwoomMain.account_num)
         self.kiwoomMain.dynamicCall("SetInputValue(String, String)", "비밀번호", "0000")
         self.kiwoomMain.dynamicCall("SetInputValue(String, String)", "비밀번호입력매체구분", "00")
@@ -35,7 +31,6 @@ class GetMyInfo():
 
     # 계좌 평가 잔고 내역 요청
     def detail_account_mystock(self, sPrevNext="0"): 
-        print("detail_account_mystock() = > 계좌 평가 잔고 내역 요청")
         self.kiwoomMain.dynamicCall("SetInputValue(String, String)", "계좌번호", self.kiwoomMain.account_num)
         self.kiwoomMain.dynamicCall("SetInputValue(String, String)", "비밀번호", "0000")
         self.kiwoomMain.dynamicCall("SetInputValue(String, String)", "비밀번호입력매체구분", "00")
@@ -47,7 +42,6 @@ class GetMyInfo():
 
     # 미체결 종목 요청
     def not_concluded_account(self, sPrevNext="0"): 
-        print("not_concluded_account() => 실시간미체결종목요청")
         self.kiwoomMain.dynamicCall("SetInputValue(QString, QString)", "계좌번호", self.kiwoomMain.account_num)
         self.kiwoomMain.dynamicCall("SetInputValue(QString, QString)", "체결구분", "1")
         self.kiwoomMain.dynamicCall("SetInputValue(QString, QString)", "매매구분", "0")
